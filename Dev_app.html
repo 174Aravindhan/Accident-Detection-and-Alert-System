@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Dev App Test</title>
+  </head>
+  <body>
+    <h2>Dev add vehicle test</h2>
+    <form id="add-vehicle-form">
+      <input name="vehicle_id" placeholder="vehicle_id" required /><br />
+      <input name="model" placeholder="model" /><br />
+      <input name="owner" placeholder="owner" /><br />
+      <input name="registration" placeholder="registration" /><br />
+      <textarea
+        name="accident_details"
+        placeholder="accident_details"
+      ></textarea
+      ><br />
+      <button type="submit">Add Vehicle</button>
+    </form>
+    <script>
+      document.getElementById("add-vehicle-form").onsubmit = async function (
+        e
+      ) {
+        e.preventDefault();
+        const f = e.target;
+        const payload = {
+          vehicle_id: f.vehicle_id.value.trim(),
+          model: f.model.value.trim(),
+          owner: f.owner.value.trim(),
+          registration: f.registration.value.trim(),
+          accident_details: f.accident_details.value.trim(),
+          // optionally: meta: { lat: xxx, lon: yyy }
+        };
+        console.log("Sending JSON payload:", payload);
+
+        try {
+          const resp = await fetch("http://127.0.0.1:5001/add_vehicle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          console.log("HTTP status:", resp.status, resp.statusText);
+          const text = await resp.text();
+          console.log("Raw response text:", text);
+          let json;
+          try {
+            json = JSON.parse(text || "{}");
+          } catch (e) {
+            console.error("Response not JSON", e);
+          }
+
+          if (resp.ok && json && json.success) {
+            const action = json.action || "created/updated";
+            alert(
+              `Success — action: ${action}, vehicle_id: ${json.vehicle_id}`
+            );
+            f.reset();
+          } else {
+            const m = json && json.message ? json.message : "Unknown error";
+            alert(`Failed to add vehicle — ${m} (see console)`);
+            console.error("Add failed response:", json);
+          }
+        } catch (err) {
+          console.error("Network/fetch error:", err);
+          alert("Network error — see console.");
+        }
+      };
+    </script>
+  </body>
+</html>

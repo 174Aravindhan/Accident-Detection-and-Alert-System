@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Accident Detection System — SPA</title>
+    <style>
+      :root {
+        --accent: #e11d48;
+        --glass: rgba(255, 255, 255, 0.06);
+        --muted: rgba(255, 255, 255, 0.75);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        min-height: 100vh;
+        font-family: Inter, Segoe UI, Helvetica, Arial, sans-serif;
+        color: #fff;
+        background: #000;
+        overflow: hidden;
+      }
+      .back {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+        z-index: 3;
+        cursor: pointer;
+      }
+
+      /* Shared background */
+      .bg {
+        position: fixed;
+        inset: 0;
+        background: url("Main Background.jpg") center/cover no-repeat;
+        z-index: 0;
+        filter: brightness(0.72);
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(3px);
+        z-index: 1;
+      }
+
+      .app {
+        position: relative;
+        z-index: 2;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        padding: 28px 20px 0;
+        display: flex;
+        justify-content: center;
+      }
+      header h1 {
+        font-size: 2.6rem;
+        line-height: 1.05;
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .page {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        transition: opacity 0.28s ease, transform 0.32s ease, visibility 0.32s;
+      }
+      .page[aria-hidden="true"] {
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(8px);
+        visibility: hidden;
+      }
+      .page[aria-hidden="false"] {
+        pointer-events: auto;
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+      }
+
+      .center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .sos {
+        width: 200px;
+        height: 200px;
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 25%, #ff6b6b, var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 2.8rem;
+        border: 4px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 12px 36px rgba(225, 29, 72, 0.35),
+          inset 0 -6px 12px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+        color: #fff;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.04);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .desc {
+        max-width: 720px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 920px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.02),
+          rgba(255, 255, 255, 0.01)
+        );
+        border-radius: 14px;
+        padding: 22px;
+        display: flex;
+        gap: 18px;
+        align-items: center;
+      }
+      .left {
+        flex: 1;
+      }
+      .right {
+        width: 340px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
+      .hero-img {
+        width: 100%;
+        height: 100%;
+        max-height: 350px;
+        object-fit: cover;
+        border-radius: 20px;
+        background: var(--glass);
+        padding: 10px;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: inherit;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(225, 29, 72, 0.28);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      /* forms */
+      .form-box {
+        width: 420px;
+        background: rgba(0, 0, 0, 0.55);
+        border-radius: 12px;
+        padding: 22px;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      }
+      .form-box h2 {
+        text-align: center;
+        margin-bottom: 12px;
+        font-size: 1.4rem;
+      }
+      .form-box label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      .input-with-icon {
+        position: relative;
+      }
+      .input-with-icon input {
+        width: 100%;
+        padding: 12px 44px 12px 12px;
+        margin-bottom: 8px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        color: #fff;
+        font-size: 1rem;
+      }
+      .toggle-eye {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        opacity: 0.85;
+      }
+      .error-msg {
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        color: #ffb4b4;
+        min-height: 18px;
+      }
+      .success {
+        color: #8ef3b3;
+      }
+      .form-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .form-actions button {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .submit-btn {
+        background: var(--accent);
+        color: #fff;
+      }
+      .reset-btn {
+        background: #3b82f6;
+        color: #fff;
+      }
+
+      /* Vehicle page */
+      .vehicle-page .logo {
+        width: 96px;
+        height: 96px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0ea5a4, #06b6d4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 30px rgba(6, 182, 212, 0.12);
+        margin-bottom: 18px;
+      }
+      .vehicle-btn {
+        padding: 18px 26px;
+        border-radius: 999px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        background: var(--accent);
+        box-shadow: 0 12px 36px rgba(225, 29, 72, 0.26);
+        border: none;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      /* Vehicle modal */
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      .modal.show {
+        display: flex;
+      }
+      .modal-card {
+        width: 380px;
+        background: rgba(10, 14, 20, 0.7);
+        padding: 18px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(8px);
+      }
+
+      /* Vehicle info card */
+      .info-card {
+        width: 520px;
+        max-width: 92%;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.03),
+          rgba(255, 255, 255, 0.01)
+        );
+        border-radius: 14px;
+        padding: 22px;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+      }
+      .info-head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .info-head .icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #06b6d4, #0ea5a4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .info-row {
+        background: rgba(0, 0, 0, 0.35);
+        padding: 12px;
+        border-radius: 8px;
+      }
+      .label {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .value {
+        font-weight: 700;
+        font-size: 1rem;
+      }
+      .back-small {
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: none;
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        cursor: pointer;
+      }
+
+      @media (max-width: 900px) {
+        header h1 {
+          font-size: 1.8rem;
+        }
+        .info-card {
+          width: 92%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg" aria-hidden></div>
+    <div class="overlay" aria-hidden></div>
+
+    <div class="app" id="app">
+      <div class="back" id="backBtn">&larr; Back</div>
+
+      <header>
+        <h1>ACCIDENT<br />DETECTION<br />SYSTEM</h1>
+      </header>
+
+      <!-- Pages -->
+      <section id="landing" class="page" aria-hidden="false">
+        <div class="back" id="backBtn" style="display: none">&larr;Back</div>
+
+        <div class="center">
+          <button id="sosBtn" class="sos">ADAS</button>
+          <p class="desc">
+            Automatic crash detection & alert system. Tap to Sign Up or Login.
+          </p>
+        </div>
+      </section>
+
+      <section id="sosPage" class="page" aria-hidden="true">
+        <div class="back" id="backBtn" style="display: none">&larr;Back</div>
+        <div class="card">
+          <div class="left">
+            <div class="h-title">Emergency — Sign in or create an account</div>
+            <div class="h-sub">
+              Quick access to your emergency contacts and vehicle details helps
+              responders act faster.
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px">
+              <a href="#" id="signupBtn" class="btn btn-primary">Sign Up</a>
+              <a href="#" id="loginBtn" class="btn btn-ghost">Login</a>
+            </div>
+          </div>
+          <div class="right">
+            <img
+              src="Accident_Illustration.png"
+              class="hero-img"
+              alt="Accident illustration"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section id="loginPage" class="page" aria-hidden="true">
+        <div class="back" id="backBtn" style="display: none">&larr;Back</div>
+        <div class="form-box">
+          <h2>Login</h2>
+          <form id="loginForm">
+            <label for="loginUser">Username</label>
+            <input
+              id="loginUser"
+              name="loginUser"
+              type="text"
+              placeholder="Enter username"
+              autocomplete="username"
+            />
+            <div id="loginUserError" class="error-msg"></div>
+
+            <label for="loginPass">Password</label>
+            <div class="input-with-icon">
+              <input
+                id="loginPass"
+                name="loginPass"
+                type="password"
+                placeholder="Enter password"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="toggle-eye"
+                data-target="loginPass"
+                aria-label="Toggle password visibility"
+              >
+                👁️
+              </button>
+            </div>
+            <div id="loginPassError" class="error-msg"></div>
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Submit</button>
+              <button type="reset" id="loginReset" class="reset-btn">
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="signupPage" class="page" aria-hidden="true">
+        <div class="back" id="backBtn" style="display: none">&larr;Back</div>
+        <div class="form-box">
+          <h2>Sign Up</h2>
+          <form id="signupForm">
+            <label for="fullname">Full Name</label>
+            <input
+              id="fullname"
+              name="fullname"
+              type="text"
+              placeholder="Your full name"
+            />
+            <div id="fullNameError" class="error-msg"></div>
+
+            <label for="signupUsername">Username</label>
+            <input
+              id="signupUsername"
+              name="signupUsername"
+              type="text"
+              placeholder="Choose username"
+            />
+            <div id="usernameError" class="error-msg"></div>
+
+            <label for="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+            />
+            <div id="emailError" class="error-msg"></div>
+
+            <label for="newPassword">Password</label>
+            <div class="input-with-icon">
+              <input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                placeholder="Create password"
+              />
+              <button
+                type="button"
+                class="toggle-eye"
+                data-target="newPassword"
+                aria-label="Toggle password visibility"
+              >
+                👁️
+              </button>
+            </div>
+            <div id="passwordError" class="error-msg"></div>
+
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-with-icon">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirm password"
+              />
+              <button
+                type="button"
+                class="toggle-eye"
+                data-target="confirmPassword"
+                aria-label="Toggle password visibility"
+              >
+                👁️
+              </button>
+            </div>
+            <div id="confirmPasswordError" class="error-msg"></div>
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn">Create Account</button>
+              <button type="reset" id="signupReset" class="reset-btn">
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Vehicle Details Page (5) -->
+      <section id="vehiclePage" class="page vehicle-page" aria-hidden="true">
+        <div class="back" id="backBtn" style="display: none">&larr;Back</div>
+        <div style="display: flex; flex-direction: column; align-items: center">
+          <div class="logo" aria-hidden>
+            <!-- temporary SVG logo -->
+            <svg
+              width="60"
+              height="60"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 13c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4z"
+                stroke="#fff"
+                stroke-opacity="0.95"
+                stroke-width="0.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <circle
+                cx="7.5"
+                cy="15.5"
+                r="1.3"
+                fill="#fff"
+                fill-opacity="0.95"
+              />
+              <circle
+                cx="16.5"
+                cy="15.5"
+                r="1.3"
+                fill="#fff"
+                fill-opacity="0.95"
+              />
+            </svg>
+          </div>
+          <h3 style="margin-bottom: 22px">Vehicle Dashboard</h3>
+          <button id="vehicleBtn" class="vehicle-btn">Vehicle Details</button>
+          <div style="margin-top: 12px">
+            <button id="logoutBtn" class="reset-btn">Logout</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vehicle Info Page (6) -->
+      <section id="vehicleInfoPage" class="page" aria-hidden="true">
+        <div class="back" id="backBtn" style="display: none">&larr;Back</div>
+        <div class="info-card">
+          <div class="info-head">
+            <div class="icon">VD</div>
+            <div>
+              <div style="font-size: 1.1rem; font-weight: 800" id="vi_title">
+                Vehicle Details
+              </div>
+              <div style="font-size: 0.85rem; color: var(--muted)" id="vi_sub">
+                Registered Vehicle Information
+              </div>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-row">
+              <div class="label">Vehicle ID</div>
+              <div class="value" id="vi_id">-</div>
+            </div>
+            <div class="info-row">
+              <div class="label">Model</div>
+              <div class="value" id="vi_model">-</div>
+            </div>
+            <div class="info-row">
+              <div class="label">Owner Name</div>
+              <div class="value" id="vi_owner">-</div>
+            </div>
+            <div class="info-row">
+              <div class="label">Registration Number</div>
+              <div class="value" id="vi_reg">-</div>
+            </div>
+            <div class="info-row" style="grid-column: 1 / -1">
+              <div class="label">Accident Details</div>
+              <div class="value" id="vi_accident">-</div>
+            </div>
+          </div>
+          <button class="back-small" id="backToVehicle">
+            Back to Vehicle Page
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Vehicle modal popup -->
+    <div
+      id="vehicleModal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="modal-card">
+        <h3 style="margin-bottom: 10px">Enter Vehicle ID</h3>
+        <div class="input-with-icon">
+          <input
+            id="modalVehicleId"
+            type="text"
+            placeholder="Vehicle ID (e.g. VHL123)"
+          />
+        </div>
+        <div id="modalVehicleError" class="error-msg"></div>
+        <div style="display: flex; gap: 10px; margin-top: 10px">
+          <button id="modalProceed" class="submit-btn">Proceed</button>
+          <button id="modalCancel" class="reset-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="vehicle-list-section"></div>
+
+    <script>
+      // API base - update if your backend uses a different host/port
+      const API_BASE = "http://127.0.0.1:5000";
+
+      // Pages
+      const pages = {
+        landing: document.getElementById("landing"),
+        sosPage: document.getElementById("sosPage"),
+        loginPage: document.getElementById("loginPage"),
+        signupPage: document.getElementById("signupPage"),
+        vehiclePage: document.getElementById("vehiclePage"),
+        vehicleInfoPage: document.getElementById("vehicleInfoPage"),
+      };
+
+      const sosBtn = document.getElementById("sosBtn");
+      const loginBtn = document.getElementById("loginBtn");
+      const signupBtn = document.getElementById("signupBtn");
+      const backBtn = document.getElementById("backBtn");
+      backBtn.onclick = () => showPage(pages.landing);
+
+      function showPage(target) {
+        Object.values(pages).forEach((p) =>
+          p.setAttribute("aria-hidden", "true")
+        );
+        target.setAttribute("aria-hidden", "false");
+
+        // Show or hide back button
+        const isLanding = target === pages.landing;
+        backBtn.style.display = isLanding ? "none" : "block";
+
+        // Focus first input if exists
+        const firstInput = target.querySelector("input");
+        if (firstInput) setTimeout(() => firstInput.focus(), 120);
+      }
+
+      sosBtn.onclick = () => showPage(pages.sosPage);
+      loginBtn.onclick = () => showPage(pages.loginPage);
+      signupBtn.onclick = () => showPage(pages.signupPage);
+      backBtn && (backBtn.onclick = () => showPage(pages.landing));
+
+      // Inline message helper
+      function setMsg(id, msg) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = msg || "";
+      }
+
+      // Toggle eye in inputs
+      document.querySelectorAll(".toggle-eye").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tid = btn.getAttribute("data-target");
+          const inp = document.getElementById(tid);
+          if (!inp) return;
+          if (inp.type === "password") {
+            inp.type = "text";
+            btn.textContent = "🙈";
+          } else {
+            inp.type = "password";
+            btn.textContent = "👁️";
+          }
+          inp.focus();
+        });
+      });
+
+      // Reset toggle icons on reset
+      const sReset = document.getElementById("signupReset");
+      if (sReset)
+        sReset.addEventListener("click", () =>
+          setTimeout(
+            () =>
+              document
+                .querySelectorAll(
+                  '[data-target="newPassword"],[data-target="confirmPassword"]'
+                )
+                .forEach((b) => (b.textContent = "👁️")),
+            20
+          )
+        );
+      const lReset = document.getElementById("loginReset");
+      if (lReset)
+        lReset.addEventListener("click", () =>
+          setTimeout(
+            () =>
+              document
+                .querySelectorAll('[data-target="loginPass"]')
+                .forEach((b) => (b.textContent = "👁️")),
+            20
+          )
+        );
+
+      // Validation patterns
+      const usernamePattern =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{6,}$/;
+      const passwordPattern = /^(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      // ---------- Signup (POST /signup) ----------
+      document
+        .getElementById("signupForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          // clear messages
+          [
+            "fullNameError",
+            "usernameError",
+            "emailError",
+            "passwordError",
+            "confirmPasswordError",
+          ].forEach((id) => setMsg(id, ""));
+          const name = document.getElementById("fullname").value.trim();
+          const username = document
+            .getElementById("signupUsername")
+            .value.trim();
+          const email = document.getElementById("email").value.trim();
+          const pw = document.getElementById("newPassword").value;
+          const cpw = document.getElementById("confirmPassword").value;
+          let ok = true;
+          if (!name) {
+            setMsg("fullNameError", "Full name required");
+            ok = false;
+          }
+          if (!username) {
+            setMsg("usernameError", "Username required");
+            ok = false;
+          } else if (!usernamePattern.test(username)) {
+            setMsg(
+              "usernameError",
+              "Username must have 6+ chars, upper, lower, number, special"
+            );
+            ok = false;
+          }
+          if (!email) {
+            setMsg("emailError", "Email required");
+            ok = false;
+          } else if (!emailPattern.test(email)) {
+            setMsg("emailError", "Invalid email");
+            ok = false;
+          }
+          if (!pw) {
+            setMsg("passwordError", "Password required");
+            ok = false;
+          } else if (!passwordPattern.test(pw)) {
+            setMsg("passwordError", "Weak password");
+            ok = false;
+          }
+          if (pw !== cpw) {
+            setMsg("confirmPasswordError", "Passwords do not match");
+            ok = false;
+          }
+          if (!ok) return;
+
+          const btn = document.querySelector("#signupForm .submit-btn");
+          if (btn) btn.disabled = true;
+          try {
+            const resp = await fetch(API_BASE + "/signup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include", // include cookies - important for session flow consistency
+              body: JSON.stringify({
+                fullname: name,
+                username,
+                email,
+                password: pw,
+              }),
+            });
+            const data = await resp
+              .json()
+              .catch(() => ({ success: false, message: "Server error" }));
+            if (resp.ok && data.success) {
+              setMsg("usernameError", "✅ Account created");
+              setTimeout(() => showPage(pages.loginPage), 700);
+            } else {
+              // show helpful message inside username area (server message wins)
+              setMsg("usernameError", data.message || "Signup failed");
+            }
+          } catch (err) {
+            console.error(err);
+            setMsg("usernameError", "Unable to reach server");
+          } finally {
+            if (btn) btn.disabled = false;
+          }
+        });
+
+      // ---------- Login (POST /login) ----------
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          setMsg("loginUserError", "");
+          setMsg("loginPassError", "");
+          const user = document.getElementById("loginUser").value.trim();
+          const pass = document.getElementById("loginPass").value.trim();
+          let valid = true;
+          if (!user) {
+            setMsg("loginUserError", "Username required");
+            valid = false;
+          }
+          if (!pass) {
+            setMsg("loginPassError", "Password required");
+            valid = false;
+          }
+          if (!valid) return;
+
+          const btn = document.querySelector("#loginForm .submit-btn");
+          if (btn) btn.disabled = true;
+          try {
+            const resp = await fetch(API_BASE + "/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include", // IMPORTANT: allow cookie set by server
+              body: JSON.stringify({ username: user, password: pass }),
+            });
+            const data = await resp
+              .json()
+              .catch(() => ({ success: false, message: "Server error" }));
+            if (resp.ok && data.success) {
+              // store assigned vehicle if backend returned one
+              if (data.user && data.user.assignedVehicle) {
+                localStorage.setItem(
+                  "assignedVehicle",
+                  data.user.assignedVehicle
+                );
+              }
+              // go to vehicle page
+              showPage(pages.vehiclePage);
+            } else {
+              setMsg(
+                "loginUserError",
+                data.message || "Invalid username or password"
+              );
+            }
+          } catch (err) {
+            console.error(err);
+            setMsg("loginUserError", "Unable to reach server");
+          } finally {
+            if (btn) btn.disabled = false;
+          }
+        });
+
+      // ---------- Session check on load (GET /session) ----------
+      async function checkSession() {
+        const resp = await fetch("http://127.0.0.1:5000/session", {
+          credentials: "include",
+        });
+        const data = await resp.json();
+        if (data.logged_in) {
+          showDashboard(data.user);
+        } else {
+          showLoginForm();
+        }
+      }
+      // run once on load
+      checkSession();
+
+      // ---------- Logout (POST /logout) ----------
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", async () => {
+          try {
+            await fetch(API_BASE + "/logout", {
+              method: "POST",
+              credentials: "include",
+            });
+          } catch (e) {
+            console.warn("Logout request failed", e);
+          }
+          localStorage.removeItem("assignedVehicle");
+          showPage(pages.landing);
+        });
+
+      // Vehicle modal controls
+      const vehicleBtn = document.getElementById("vehicleBtn");
+      const vehicleModal = document.getElementById("vehicleModal");
+      const modalProceed = document.getElementById("modalProceed");
+      const modalCancel = document.getElementById("modalCancel");
+      const modalVehicleId = document.getElementById("modalVehicleId");
+      const modalVehicleError = document.getElementById("modalVehicleError");
+
+      vehicleBtn.addEventListener("click", () => {
+        modalVehicleId.value = localStorage.getItem("assignedVehicle") || "";
+        setMsg("modalVehicleError", "");
+        vehicleModal.classList.add("show");
+        vehicleModal.setAttribute("aria-hidden", "false");
+        setTimeout(() => modalVehicleId.focus(), 80);
+      });
+
+      modalCancel.addEventListener("click", () => {
+        vehicleModal.classList.remove("show");
+        vehicleModal.setAttribute("aria-hidden", "true");
+      });
+
+      // Proceed -> validate against backend (POST /validateID)
+      modalProceed.addEventListener("click", async () => {
+        const vid = modalVehicleId.value.trim();
+        setMsg("modalVehicleError", "");
+        if (!vid) {
+          setMsg("modalVehicleError", "Vehicle ID is required");
+          return;
+        }
+
+        modalProceed.disabled = true;
+        modalProceed.textContent = "Checking...";
+        try {
+          const resp = await fetch(API_BASE + "/validateID", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ vehicleID: vid }),
+          });
+          if (!resp.ok) {
+            throw new Error("Network response not ok");
+          }
+          const data = await resp.json();
+          if (data && data.valid) {
+            // populate vehicle info page with returned data
+            const v = data.vehicle || {};
+            document.getElementById("vi_id").textContent = v.vehicle_id || "-";
+            document.getElementById("vi_model").textContent = v.model || "-";
+            document.getElementById("vi_owner").textContent = v.owner || "-";
+            document.getElementById("vi_reg").textContent =
+              v.registration || "-";
+
+            // Display all accident events (not just latest text)
+            const events = data.events || [];
+            let accidentHtml = "";
+            if (events.length === 0) {
+              accidentHtml = "No recent accidents reported.";
+            } else {
+              accidentHtml =
+                '<div style="font-size: 0.9rem; line-height: 1.8;">';
+              events.forEach((evt, idx) => {
+                const timestamp =
+                  evt.timestamp || evt.created_at || "Unknown time";
+                const intensity = evt.intensity || "N/A";
+                const lat = evt.lat || "N/A";
+                const lng = evt.lng || "N/A";
+                accidentHtml += `
+                  <div style="margin-bottom: 10px; padding: 10px; background: rgba(225,29,72,0.15); border-radius: 8px; border-left: 3px solid #e11d48;">
+                    <strong>Event ${idx + 1}:</strong><br/>
+                    <span style="color: var(--muted); font-size: 0.85rem;">
+                      ${timestamp}<br/>
+                      Intensity: <strong>${intensity}</strong> | Location: <strong>(${lat}, ${lng})</strong>
+                    </span>
+                  </div>
+                `;
+              });
+              accidentHtml += "</div>";
+            }
+            document.getElementById("vi_accident").innerHTML = accidentHtml;
+            localStorage.setItem("assignedVehicle", v.id || v.vehicle_id);
+
+            vehicleModal.classList.remove("show");
+            vehicleModal.setAttribute("aria-hidden", "true");
+            showPage(pages.vehicleInfoPage);
+          } else {
+            setMsg(
+              "modalVehicleError",
+              data && data.message
+                ? data.message
+                : "Invalid Vehicle ID. Please try again."
+            );
+          }
+        } catch (err) {
+          console.error(err);
+          setMsg(
+            "modalVehicleError",
+            "Unable to reach server. Please try later."
+          );
+        } finally {
+          modalProceed.disabled = false;
+          modalProceed.textContent = "Proceed";
+        }
+      });
+
+      // MODIFIED: Populate vehicle info with all accident events
+      function populateVehicleInfo(data) {
+        const v = data.vehicle || {};
+        document.getElementById("vi_id").textContent = v.vehicle_id || "-";
+        document.getElementById("vi_model").textContent = v.model || "-";
+        document.getElementById("vi_owner").textContent = v.owner || "-";
+        document.getElementById("vi_reg").textContent = v.registration || "-";
+
+        // Display all accident events (not just latest text)
+        const events = data.events || [];
+        let accidentHtml = "";
+        if (events.length === 0) {
+          accidentHtml = "No recent accidents reported.";
+        } else {
+          accidentHtml = '<div style="font-size: 0.9rem; line-height: 1.8;">';
+          events.forEach((evt, idx) => {
+            const timestamp = evt.timestamp || evt.created_at || "Unknown time";
+            const intensity = evt.intensity || "N/A";
+            const lat = evt.lat || "N/A";
+            const lng = evt.lng || "N/A";
+            accidentHtml += `
+              <div style="margin-bottom: 10px; padding: 10px; background: rgba(225,29,72,0.15); border-radius: 8px; border-left: 3px solid #e11d48;">
+                <strong>Event ${idx + 1}:</strong><br/>
+                <span style="color: var(--muted); font-size: 0.85rem;">
+                  ${timestamp}<br/>
+                  Intensity: <strong>${intensity}</strong> | Location: <strong>(${lat}, ${lng})</strong>
+                </span>
+              </div>
+            `;
+          });
+          accidentHtml += "</div>";
+        }
+        document.getElementById("vi_accident").innerHTML = accidentHtml;
+        localStorage.setItem("assignedVehicle", v.id || v.vehicle_id);
+      }
+
+      // Update modalProceed to use this function
+      modalProceed.addEventListener("click", async () => {
+        const vid = modalVehicleId.value.trim();
+        setMsg("modalVehicleError", "");
+        if (!vid) {
+          setMsg("modalVehicleError", "Vehicle ID is required");
+          return;
+        }
+
+        modalProceed.disabled = true;
+        modalProceed.textContent = "Checking...";
+        try {
+          const resp = await fetch(API_BASE + "/validateID", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ vehicleID: vid }),
+          });
+          if (!resp.ok) {
+            throw new Error("Network response not ok");
+          }
+          const data = await resp.json();
+          if (data && data.valid) {
+            populateVehicleInfo(data);  // Use the new function
+            vehicleModal.classList.remove("show");
+            vehicleModal.setAttribute("aria-hidden", "true");
+            showPage(pages.vehicleInfoPage);
+          } else {
+            setMsg("modalVehicleError", data && data.message ? data.message : "Invalid Vehicle ID. Please try again.");
+          }
+        } catch (err) {
+          console.error(err);
+          setMsg("modalVehicleError", "Unable to reach server. Please try later.");
+        } finally {
+          modalProceed.disabled = false;
+          modalProceed.textContent = "Proceed";
+        }
+      });
+
+      // Back from vehicle info
+      document
+        .getElementById("backToVehicle")
+        .addEventListener("click", () => showPage(pages.vehiclePage));
+
+      // Close modal on outside click
+      vehicleModal.addEventListener("click", (e) => {
+        if (e.target === vehicleModal) {
+          vehicleModal.classList.remove("show");
+          vehicleModal.setAttribute("aria-hidden", "true");
+        }
+      });
+
+      // Add this function to your script
+      async function loadVehicles() {
+        const resp = await fetch("http://127.0.0.1:5000/vehicles", {
+          credentials: "include",
+        });
+        const vehicles = await resp.json();
+        // Example: show in a modal or a section
+        let html = "<h3>Registered Vehicles</h3><ul>";
+        vehicles.forEach((v) => {
+          html += `<li><b>${v.vehicle_id}</b> — ${v.model} — ${v.owner} — ${v.registration}</li>`;
+        });
+        html += "</ul>";
+        // You can show this in any section or modal you want
+        document.getElementById("vehicle-list-section").innerHTML = html;
+      }
+
+      // initialize
+      showPage(pages.landing);
+    </script>
+  </body>
+</html>
